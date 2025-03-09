@@ -2,26 +2,71 @@
   "name": "bizbooks",
   "version": "0.1.0",
   "private": true,
+  "main": "main.js",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-pack": "next build && next export && electron-builder -c.extraMetadata.main=main.js",
+    "electron-build": "npm run build && npm run electron-pack",
+    "init-db": "node db/init-db.js"
   },
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@types/bcrypt": "^5.0.2",
+    "bcrypt": "^5.1.1",
+    "bcryptjs": "^3.0.2",
+    "chart.js": "^4.4.8",
+    "date-fns": "^4.1.0",
+    "dotenv": "^16.4.7",
+    "electron-is-dev": "^3.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.13.0",
+    "next": "^15.2.1",
+    "next-auth": "^4.24.11",
     "react": "^19.0.0",
+    "react-chartjs-2": "^5.3.0",
     "react-dom": "^19.0.0",
-    "next": "15.2.1"
+    "recharts": "^2.15.1"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
+    "@types/jsonwebtoken": "^9.0.9",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "concurrently": "^9.1.2",
+    "electron": "^35.0.0",
+    "electron-builder": "^25.1.8",
     "eslint": "^9",
     "eslint-config-next": "15.2.1",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "wait-on": "^8.0.2"
+  },
+  "build": {
+    "appId": "com.bizbooks",
+    "productName": "BizBooks",
+    "files": [
+      "main.js",
+      "out/**/*",
+      "node_modules/**/*"
+    ],
+    "directories": {
+      "buildResources": "assets",
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "linux": {
+      "target": "deb"
+    }
   }
 }

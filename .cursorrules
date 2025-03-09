@@ -1,0 +1,12 @@
+Project Overview
+
+Create a user-friendly, simple accounting desktop application designed specifically for small businesses. It will be developed using nextjs frontend and MySQL as the backend database to ensure reliable data storage.
+
+Tech Stack
+
+Frontend: Electron NextJs (Typescript, tailwindcss 4)
+
+Backend Database: MySQL
+
+ORM (Optional but recommended): Sequelize (Node.js ORM)
+
