@@ -10,7 +10,9 @@ export async function DELETE(
   context: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    const params = await context.params;
+    const id = params.id;
+    
     const [result] = await pool.query<OkPacket>(
       'DELETE FROM transactions WHERE id = ?',
       [id]
@@ -39,7 +41,9 @@ export async function GET(
   context: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    const params = await context.params;
+    const id = params.id;
+    
     const [rows] = await pool.query<RowDataPacket[]>(
       `SELECT t.*, c.name as category_name 
        FROM transactions t 
@@ -71,7 +75,9 @@ export async function PUT(
   context: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    const params = await context.params;
+    const id = params.id;
+    
     const body = await request.json();
     const { date, description, amount, type, category_id, payment_method, reference_number } = body;
 

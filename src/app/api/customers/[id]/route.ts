@@ -13,10 +13,12 @@ interface Params {
 // GET /api/customers/[id] - Get single customer
 export async function GET(
   request: Request,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const { id } = params;
+    // Await the params object before accessing its properties
+    const awaitedParams = await params;
+    const id = awaitedParams.id;
 
     // Get customer details with invoice summary
     const customers = await executeQuery<RowDataPacket[]>(
@@ -74,10 +76,13 @@ export async function GET(
 // PUT /api/customers/[id] - Update customer
 export async function PUT(
   request: Request,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const { id } = params;
+    // Await the params object before accessing its properties
+    const awaitedParams = await params;
+    const id = awaitedParams.id;
+    
     const body = await request.json();
     const { name, email, phone, address, tax_number } = body;
 
@@ -131,10 +136,12 @@ export async function PUT(
 // DELETE /api/customers/[id] - Delete customer
 export async function DELETE(
   request: Request,
-  { params }: { params: Params }
+  { params }: { params: Promise<Params> }
 ) {
   try {
-    const { id } = params;
+    // Await the params object before accessing its properties
+    const awaitedParams = await params;
+    const id = awaitedParams.id;
 
     // Check if customer has any invoices
     const invoices = await executeQuery<RowDataPacket[]>(

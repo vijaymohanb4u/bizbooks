@@ -11,7 +11,9 @@ export async function GET(
   context: { params: { id: string } }
 ) {
   try {
-    const id = await context.params.id;
+    // Await the params object before accessing its properties
+    const params = await context.params;
+    const id = params.id;
 
     // Get vendor details with bill summary
     const vendors = await executeQuery<RowDataPacket[]>(
@@ -72,7 +74,10 @@ export async function PUT(
   context: { params: { id: string } }
 ) {
   try {
-    const id = await context.params.id;
+    // Await the params object before accessing its properties
+    const params = await context.params;
+    const id = params.id;
+    
     const body = await request.json();
     const { name, email, phone, address, tax_number } = body;
 
@@ -129,7 +134,9 @@ export async function DELETE(
   context: { params: { id: string } }
 ) {
   try {
-    const id = await context.params.id;
+    // Await the params object before accessing its properties
+    const params = await context.params;
+    const id = params.id;
 
     // Check if vendor has any bills
     const bills = await executeQuery<RowDataPacket[]>(

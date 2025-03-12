@@ -11,7 +11,9 @@ export async function GET(
   context: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    // Await the params object before accessing its properties
+    const params = await context.params;
+    const id = params.id;
 
     // Get invoice with customer details
     const [invoices] = await pool.query<RowDataPacket[]>(
@@ -69,7 +71,10 @@ export async function PUT(
   context: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    // Await the params object before accessing its properties
+    const params = await context.params;
+    const id = params.id;
+    
     const body = await request.json();
     const {
       customer_id,
@@ -184,7 +189,9 @@ export async function DELETE(
   context: { params: { id: string } }
 ) {
   try {
-    const id = await context.params.id;
+    // Await the params object before accessing its properties
+    const params = await context.params;
+    const id = params.id;
 
     // Check if invoice exists and is not paid
     const [invoices] = await pool.query<RowDataPacket[]>(

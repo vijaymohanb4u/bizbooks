@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { PlusIcon, TrashIcon } from '@heroicons/react/24/outline';
 
@@ -30,7 +30,16 @@ interface InvoiceFormData {
   status: 'draft' | 'sent' | 'paid' | 'overdue' | 'cancelled';
 }
 
-export default function EditInvoicePage({ params }: { params: { id: string } }) {
+interface EditInvoicePageProps {
+  params: Promise<{
+    id: string;
+  }>;
+}
+
+export default function EditInvoicePage({ params }: EditInvoicePageProps) {
+  // Unwrap the params Promise using React.use()
+  const { id } = use(params);
+  
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -52,7 +61,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
 
   const fetchInvoice = async () => {
     try {
-      const response = await fetch(`/api/invoices/${params.id}`);
+      const response = await fetch(`/api/invoices/${id}`);
       if (!response.ok) throw new Error('Failed to fetch invoice');
       const invoice = await response.json();
       
@@ -93,7 +102,7 @@ export default function EditInvoicePage({ params }: { params: { id: string } }) 
     setError('');
 
     try {
-      const response = await fetch(`/api/invoices/${params.id}`, {
+      const response = await fetch(`/api/invoices/${id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),

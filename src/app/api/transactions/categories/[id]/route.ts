@@ -16,14 +16,19 @@ interface Category extends RowDataPacket {
   updated_at: Date;
 }
 
+// Define the function with destructured params
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  // Await the entire params object first
+  const params = await context.params;
+  const id = params.id;
+  
   try {
     const [categories] = await pool.query<Category[]>(
       'SELECT * FROM categories WHERE id = ?',
-      [params.id]
+      [id]
     );
 
     if (!categories[0]) {
@@ -43,10 +48,15 @@ export async function GET(
   }
 }
 
+// Define the function with destructured params
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  // Await the entire params object first
+  const params = await context.params;
+  const id = params.id;
+  
   try {
     const { name, type, description, color } = await request.json();
 
@@ -68,7 +78,7 @@ export async function PUT(
     // Update category
     const [result] = await pool.query<OkPacket>(
       'UPDATE categories SET name = ?, type = ?, description = ?, color = ? WHERE id = ?',
-      [name, type, description || null, color || null, params.id]
+      [name, type, description || null, color || null, id]
     );
 
     if (result.affectedRows === 0) {
@@ -81,7 +91,7 @@ export async function PUT(
     // Fetch updated category
     const [categories] = await pool.query<Category[]>(
       'SELECT * FROM categories WHERE id = ?',
-      [params.id]
+      [id]
     );
 
     return NextResponse.json(categories[0]);
@@ -94,15 +104,20 @@ export async function PUT(
   }
 }
 
+// Define the function with destructured params
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
+  // Await the entire params object first
+  const params = await context.params;
+  const id = params.id;
+  
   try {
     // Check if category is being used in transactions
     const [rows] = await pool.query<RowDataPacket[]>(
       'SELECT COUNT(*) as count FROM transactions WHERE category_id = ?',
-      [params.id]
+      [id]
     );
 
     if (rows[0].count > 0) {
@@ -115,7 +130,7 @@ export async function DELETE(
     // Delete category
     const [result] = await pool.query<OkPacket>(
       'DELETE FROM categories WHERE id = ?',
-      [params.id]
+      [id]
     );
 
     if (result.affectedRows === 0) {

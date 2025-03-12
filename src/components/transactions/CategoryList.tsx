@@ -147,7 +147,7 @@ export default function CategoryList() {
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                   <Link
-                    href={`/dashboard/transactions/categories/${category.id}`}
+                    href={`/dashboard/transactions/categories/${category.id}/edit`}
                     className="text-primary-600 hover:text-primary-900 mr-4"
                   >
                     <PencilIcon className="w-5 h-5 inline" />
