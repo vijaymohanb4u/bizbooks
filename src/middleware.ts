@@ -13,16 +13,17 @@ export async function middleware(request: NextRequest) {
   
   const { pathname } = request.nextUrl;
 
-  // Check if the path is public
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
+  // Check if the path is public (including paths that start with these prefixes)
+  const isPublicPath = publicPaths.some(path => 
+    pathname === path || 
+    pathname.startsWith(`${path}/`)
+  );
   
-  // Protect all dashboard routes
-  if (pathname.startsWith('/dashboard')) {
-    if (!token) {
-      const loginUrl = new URL('/login', request.url);
-      loginUrl.searchParams.set('callbackUrl', pathname);
-      return NextResponse.redirect(loginUrl);
-    }
+  // If path is not public and user is not authenticated, redirect to login
+  if (!isPublicPath && !token) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   // Redirect authenticated users away from auth pages
