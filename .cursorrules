@@ -6,6 +6,8 @@ Tech Stack
 
 Frontend: Electron NextJs 14 (Typescript, tailwindcss 4)
 
+Will be building the app both as electron and nextjs app for web browser.
+
 Backend Database: MySQL
 
 ORM (Optional but recommended): Sequelize (Node.js ORM)
