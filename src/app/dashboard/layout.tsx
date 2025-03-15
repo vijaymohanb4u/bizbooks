@@ -4,6 +4,8 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut } from 'next-auth/react';
+import { isElectron } from '@/lib/environment';
+import { api } from '@/lib/api';
 import {
   HomeIcon,
   CurrencyDollarIcon,
@@ -96,10 +98,32 @@ export default function DashboardLayout({
   };
 
   const handleLogout = async () => {
-    await signOut({ 
-      callbackUrl: '/login',
-      redirect: true 
-    });
+    console.log('[DASHBOARD] Handling logout');
+    
+    // Check if we're in Electron environment
+    const electronEnv = isElectron();
+    console.log(`[DASHBOARD] Running in Electron: ${electronEnv}`);
+    
+    if (electronEnv) {
+      console.log('[DASHBOARD] Using Electron logout');
+      try {
+        // Clear token in Electron
+        await api.logout();
+        console.log('[DASHBOARD] Electron logout successful');
+        
+        // Redirect to login page
+        router.push('/login');
+      } catch (error) {
+        console.error('[DASHBOARD] Error during Electron logout:', error);
+      }
+    } else {
+      console.log('[DASHBOARD] Using NextAuth logout');
+      // Use NextAuth for web browser
+      await signOut({ 
+        callbackUrl: '/login',
+        redirect: true 
+      });
+    }
   };
 
   return (
