@@ -17,26 +17,14 @@ const dbConfig = {
 // Create a pool instance
 const pool: Pool = mysql.createPool(dbConfig);
 
-// Test the connection and log any errors
+// Test the connection
 pool.getConnection()
   .then(connection => {
-    console.log('Database connected successfully');
-    console.log('Connection config:', {
-      host: dbConfig.host,
-      user: dbConfig.user,
-      database: dbConfig.database
-    });
     connection.release();
   })
   .catch(err => {
-    console.error('Error connecting to the database:', err.message);
+    // Silent error handling
   });
-
-// Handle pool errors
-pool.on('error', (err) => {
-  console.error('Unexpected error on idle client', err);
-  process.exit(-1);
-});
 
 // Wrapper function to execute queries with automatic connection handling
 export async function executeQuery<T>(query: string, params: any[] = []): Promise<T> {
@@ -44,7 +32,6 @@ export async function executeQuery<T>(query: string, params: any[] = []): Promis
     const [results] = await pool.query(query, params);
     return results as T;
   } catch (error) {
-    console.error('Database query error:', error);
     throw error;
   }
 }
@@ -59,7 +46,6 @@ export async function ensureDbConnected() {
     await pool.getConnection();
     return true;
   } catch (error) {
-    console.error('Database connection failed:', error);
     throw new Error('Database connection failed');
   }
 } 

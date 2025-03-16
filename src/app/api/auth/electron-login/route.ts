@@ -16,24 +16,18 @@ interface User extends RowDataPacket {
 }
 
 export async function POST(request: Request) {
-  console.log('[ELECTRON_LOGIN_API] Received login request');
-  
   try {
     // Check if request is from Electron
     const isElectron = request.headers.get('x-electron-app') === 'true';
-    console.log(`[ELECTRON_LOGIN_API] Request from Electron: ${isElectron}`);
     
     if (!isElectron) {
-      console.warn('[ELECTRON_LOGIN_API] Attempt to access Electron login API from non-Electron client');
+      // Silent warning
     }
     
     const body = await request.json();
-    console.log(`[ELECTRON_LOGIN_API] Login attempt for email: ${body.email}`);
-    
     const { email, password } = body;
 
     if (!email || !password) {
-      console.error('[ELECTRON_LOGIN_API] Missing email or password');
       return NextResponse.json(
         { error: 'Email and password are required' },
         { status: 400 }
@@ -41,7 +35,6 @@ export async function POST(request: Request) {
     }
 
     // Find user by email
-    console.log(`[ELECTRON_LOGIN_API] Looking up user with email: ${email}`);
     const [users] = await pool.query<User[]>(
       'SELECT * FROM users WHERE email = ?',
       [email]
@@ -50,7 +43,6 @@ export async function POST(request: Request) {
     const user = users[0];
 
     if (!user) {
-      console.error(`[ELECTRON_LOGIN_API] No user found with email: ${email}`);
       return NextResponse.json(
         { error: 'No user found with this email' },
         { status: 401 }
@@ -58,11 +50,9 @@ export async function POST(request: Request) {
     }
 
     // Verify password
-    console.log('[ELECTRON_LOGIN_API] Verifying password');
     const isPasswordValid = await compare(password, user.password);
 
     if (!isPasswordValid) {
-      console.error('[ELECTRON_LOGIN_API] Invalid password');
       return NextResponse.json(
         { error: 'Invalid password' },
         { status: 401 }
@@ -70,7 +60,6 @@ export async function POST(request: Request) {
     }
 
     // Return user without password
-    console.log(`[ELECTRON_LOGIN_API] Authentication successful for user: ${user.id}`);
     return NextResponse.json({
       user: {
         id: user.id.toString(),
@@ -80,7 +69,6 @@ export async function POST(request: Request) {
       }
     });
   } catch (error) {
-    console.error('[ELECTRON_LOGIN_API] Authentication error:', error);
     return NextResponse.json(
       { error: 'Authentication failed' },
       { status: 500 }

@@ -5,9 +5,6 @@
 // Create a global function to check the environment
 if (typeof window !== 'undefined') {
   (window as any).checkElectronEnvironment = function() {
-    console.log('[ENV_GLOBAL] Checking Electron environment');
-    console.log('[ENV_GLOBAL] window.isElectronApp =', (window as any).isElectronApp);
-    console.log('[ENV_GLOBAL] window.electron =', (window as any).electron);
     return true;
   };
 }
@@ -29,15 +26,8 @@ export const isElectron = (): boolean => {
   
   const result = hasElectronObject || hasIsElectronAppFlag || hasElectronInUserAgent;
   
-  console.log(`[ENV] isElectron check result: ${result}`);
-  console.log(`[ENV] hasElectronObject: ${hasElectronObject}`);
-  console.log(`[ENV] hasIsElectronAppFlag: ${hasIsElectronAppFlag}`);
-  console.log(`[ENV] hasElectronInUserAgent: ${hasElectronInUserAgent}`);
-  console.log(`[ENV] navigator.userAgent: ${navigator.userAgent}`);
-  
   // Force the result to true if we're in Electron (for debugging)
   if (hasElectronInUserAgent) {
-    console.log('[ENV] Forcing isElectron to true based on userAgent');
     return true;
   }
   
@@ -49,7 +39,5 @@ export const isElectron = (): boolean => {
  * @returns boolean indicating if running in a web browser
  */
 export const isBrowser = (): boolean => {
-  const result = typeof window !== 'undefined' && !isElectron();
-  console.log(`[ENV] isBrowser check: ${result}`);
-  return result;
+  return typeof window !== 'undefined' && !isElectron();
 }; 

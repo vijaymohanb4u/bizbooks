@@ -20,33 +20,25 @@ function LoginForm() {
   // Check environment on mount
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('[LOGIN] Component mounted, checking authentication');
       const electronEnv = isElectron();
-      console.log(`[LOGIN] Running in Electron: ${electronEnv}`);
       setIsElectronApp(electronEnv);
       
       // Force Electron mode for debugging if needed
       const forceElectronMode = true; // Set to false in production
       if (forceElectronMode && !electronEnv) {
-        console.log('[LOGIN] Forcing Electron mode for debugging');
         setIsElectronApp(true);
       }
       
-      console.log(`[LOGIN] Callback URL: ${callbackUrl}`);
-      
       // Check if already authenticated in Electron
       if (electronEnv || forceElectronMode) {
-        console.log('[LOGIN] Checking if authenticated in Electron');
         try {
           const isAuth = await api.isAuthenticated();
-          console.log(`[LOGIN] Is authenticated in Electron: ${isAuth}`);
           
           if (isAuth) {
-            console.log(`[LOGIN] Already authenticated, redirecting to ${callbackUrl}`);
             router.push(callbackUrl);
           }
         } catch (error) {
-          console.error('[LOGIN] Error checking authentication:', error);
+          // Silent error handling
         }
       }
     };
@@ -63,30 +55,21 @@ function LoginForm() {
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
-    console.log(`[LOGIN] Login attempt for email: ${email}`);
-    console.log(`[LOGIN] Is Electron environment: ${isElectronApp}`);
-
     try {
       // Use different authentication methods based on environment
       if (isElectronApp) {
-        console.log('[LOGIN] Using Electron authentication');
         // Use direct API authentication for Electron
         const result = await api.login({ email, password });
         
-        console.log(`[LOGIN] Electron auth result: ${result.success ? 'success' : 'failed'}`);
-        
         if (result.success) {
-          console.log(`[LOGIN] Electron auth successful, redirecting to ${callbackUrl}`);
           // Force a delay to ensure token is stored before redirect
           setTimeout(() => {
             router.push(callbackUrl);
           }, 1000);
         } else {
-          console.error(`[LOGIN] Electron auth failed: ${result.error}`);
           setError(result.error || 'Authentication failed');
         }
       } else {
-        console.log('[LOGIN] Using NextAuth authentication');
         // Use NextAuth for web browser
         const result = await signIn('credentials', {
           email,
@@ -94,8 +77,6 @@ function LoginForm() {
           callbackUrl,
           redirect: false, // Don't redirect automatically
         });
-        
-        console.log('[LOGIN] NextAuth result:', result);
         
         if (result?.error) {
           setError(result.error === 'CredentialsSignin' 
@@ -106,7 +87,6 @@ function LoginForm() {
         }
       }
     } catch (err) {
-      console.error('[LOGIN] Authentication error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -226,7 +206,6 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
-  console.log('[LOGIN_PAGE] Rendering login page');
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <LoginForm />

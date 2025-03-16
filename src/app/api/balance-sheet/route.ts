@@ -89,7 +89,6 @@ export async function GET(request: Request) {
 
     return NextResponse.json(balanceSheet);
   } catch (error) {
-    console.error('Error generating balance sheet:', error);
     return NextResponse.json(
       { error: 'Failed to generate balance sheet' },
       { status: 500 }

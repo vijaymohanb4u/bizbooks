@@ -25,14 +25,27 @@ export default function NewTransactionPage() {
   const fetchCategories = async () => {
     try {
       setIsLoadingCategories(true);
-      const response = await fetch('/api/transactions/categories');
+      console.log('NewTransaction: Fetching categories...');
+      const response = await fetch('/api/transactions/categories', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-electron-app': 'true'
+        },
+        cache: 'no-store'
+      });
+      
+      console.log('NewTransaction: Categories response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch categories');
+        throw new Error(`Failed to fetch categories: ${response.status} ${response.statusText}`);
       }
+      
       const { data } = await response.json();
-      console.log('Fetched categories:', data); // Debug log
+      console.log('NewTransaction: Fetched categories:', data);
       setCategories(Array.isArray(data) ? data : []);
     } catch (err) {
+      console.error('NewTransaction: Error fetching categories:', err);
       setError(err instanceof Error ? err.message : 'Failed to load categories');
       setCategories([]); // Set empty array on error
     } finally {

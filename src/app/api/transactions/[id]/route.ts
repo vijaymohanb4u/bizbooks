@@ -27,7 +27,6 @@ export async function DELETE(
 
     return NextResponse.json({ message: 'Transaction deleted successfully' });
   } catch (error) {
-    console.error('Error deleting transaction:', error);
     return NextResponse.json(
       { error: 'Failed to delete transaction' },
       { status: 500 }
@@ -61,7 +60,6 @@ export async function GET(
 
     return NextResponse.json(rows[0]);
   } catch (error) {
-    console.error('Error fetching transaction:', error);
     return NextResponse.json(
       { error: 'Failed to fetch transaction' },
       { status: 500 }
@@ -106,7 +104,6 @@ export async function PUT(
 
     return NextResponse.json({ message: 'Transaction updated successfully' });
   } catch (error) {
-    console.error('Error updating transaction:', error);
     return NextResponse.json(
       { error: 'Failed to update transaction' },
       { status: 500 }

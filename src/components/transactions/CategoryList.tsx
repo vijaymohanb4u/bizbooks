@@ -27,13 +27,27 @@ export default function CategoryList() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/transactions/categories');
+      console.log('CategoryList: Fetching categories...');
+      const response = await fetch('/api/transactions/categories', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-electron-app': 'true'
+        },
+        cache: 'no-store'
+      });
+      
+      console.log('CategoryList: Categories response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch categories');
+        throw new Error(`Failed to fetch categories: ${response.status} ${response.statusText}`);
       }
+      
       const data = await response.json();
-      setCategories(data.data);
+      console.log('CategoryList: Categories data received:', data);
+      setCategories(data.data || []);
     } catch (err) {
+      console.error('CategoryList: Error fetching categories:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setLoading(false);
@@ -48,6 +62,10 @@ export default function CategoryList() {
     try {
       const response = await fetch(`/api/transactions/categories/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-electron-app': 'true'
+        }
       });
 
       if (!response.ok) {
@@ -58,6 +76,7 @@ export default function CategoryList() {
       // Refresh categories list
       fetchCategories();
     } catch (err) {
+      console.error('CategoryList: Error deleting category:', err);
       alert(err instanceof Error ? err.message : 'Failed to delete category');
     }
   };

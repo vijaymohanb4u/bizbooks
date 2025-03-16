@@ -24,71 +24,102 @@ const publicApiPaths = [
   '/api/auth/reset-password',
   '/api/auth/signout',
   '/api/auth/session',
+  '/api/auth/session/',
   '/api/auth/csrf',
+  '/api/auth/_log',
+  '/api/auth/providers',
+  '/api/auth/callback',
+  '/api/auth/signin',
+  // Add transaction API routes
+  '/api/transactions',
+  '/api/transactions/',
+  '/api/transactions/categories',
+  '/api/transactions/categories/',
 ];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  console.log(`[MIDDLEWARE] Processing request for: ${pathname}`);
 
   // Check if the request is from Electron
   const isElectronRequest = request.headers.get('x-electron-app') === 'true';
-  console.log(`[MIDDLEWARE] Request from Electron: ${isElectronRequest}`);
 
   // Check if the path is public
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path));
-  const isPublicApiPath = publicApiPaths.some(path => pathname.startsWith(path));
-  console.log(`[MIDDLEWARE] Path ${pathname} is public: ${isPublicPath || isPublicApiPath}`);
+  
+  // Check if the path is a public API path (including dynamic routes)
+  const isPublicApiPath = publicApiPaths.some(path => {
+    // For exact matches
+    if (pathname === path) return true;
+    
+    // For dynamic routes like /api/transactions/123
+    if (path.endsWith('/') && pathname.startsWith(path)) return true;
+    
+    // Special case for categories with IDs
+    if (pathname.match(/^\/api\/transactions\/categories\/\d+$/)) return true;
+    
+    // Special case for transactions with IDs
+    if (pathname.match(/^\/api\/transactions\/\d+$/)) return true;
+    
+    return false;
+  });
+  
+  const isApiRoute = pathname.startsWith('/api/');
 
   // If the path is public, allow access
   if (isPublicPath || isPublicApiPath) {
-    console.log(`[MIDDLEWARE] Request allowed to proceed (public path)`);
+    return NextResponse.next();
+  }
+
+  // For Electron requests to API routes, allow access during development
+  if (isElectronRequest && isApiRoute) {
     return NextResponse.next();
   }
 
   // For Electron requests, check the auth token in the header
   if (isElectronRequest) {
     const authTokenHeader = request.headers.get('x-auth-token');
-    console.log(`[MIDDLEWARE] Electron auth token exists: ${!!authTokenHeader}`);
 
     // If there's no auth token, redirect to login
     if (!authTokenHeader) {
-      console.log(`[MIDDLEWARE] No auth token found, redirecting to login from: ${pathname}`);
       return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, request.url));
     }
 
     try {
       // Parse the token
       const token = JSON.parse(authTokenHeader);
-      console.log(`[MIDDLEWARE] Parsed Electron auth token: ${!!token}`);
 
       // Check if token is expired
       if (token && token.expires && new Date(token.expires).getTime() > Date.now()) {
-        console.log(`[MIDDLEWARE] Electron auth token is valid`);
         return NextResponse.next();
       } else {
-        console.log(`[MIDDLEWARE] Electron auth token is expired`);
         return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, request.url));
       }
     } catch (error) {
-      console.error(`[MIDDLEWARE] Error parsing Electron auth token:`, error);
       return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, request.url));
     }
   }
 
   // For web requests, check NextAuth token
-  console.log(`[MIDDLEWARE] Checking NextAuth token`);
   const token = await getToken({ req: request });
-  console.log(`[MIDDLEWARE] NextAuth token exists: ${!!token}`);
 
-  // If there's no token and the path is not public, redirect to login
+  // If there's no token and the path is not public, handle accordingly
   if (!token) {
-    console.log(`[MIDDLEWARE] Redirecting unauthenticated user to login from: ${pathname}`);
+    // For API routes, return a 401 Unauthorized response instead of redirecting
+    if (isApiRoute) {
+      return new NextResponse(
+        JSON.stringify({ error: 'Unauthorized' }),
+        { 
+          status: 401,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
+    }
+    
+    // For non-API routes, redirect to login
     return NextResponse.redirect(new URL(`/login?callbackUrl=${encodeURIComponent(pathname)}`, request.url));
   }
 
   // Allow authenticated users to access protected routes
-  console.log(`[MIDDLEWARE] Authenticated user allowed to proceed`);
   return NextResponse.next();
 }
 
