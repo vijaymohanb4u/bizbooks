@@ -79,38 +79,105 @@ export default function TransactionsPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/transactions/categories');
+      console.log('Fetching categories...');
+      const response = await fetch('/api/transactions/categories', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-electron-app': 'true'
+        },
+        // Add cache: 'no-store' to prevent caching issues
+        cache: 'no-store'
+      });
+      
+      console.log('Categories response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch categories');
+        throw new Error(`Failed to fetch categories: ${response.status} ${response.statusText}`);
       }
-      const { data } = await response.json();
-      setCategories(data);
+      
+      const data = await response.json();
+      console.log('Categories data received:', data);
+      setCategories(data.data || []);
     } catch (err) {
       console.error('Error fetching categories:', err);
+      // Set empty categories array to prevent UI issues
+      setCategories([]);
     }
   };
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch('/api/transactions');
+      console.log('Fetching transactions...');
+      const response = await fetch('/api/transactions', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-electron-app': 'true'
+        },
+        // Add cache: 'no-store' to prevent caching issues
+        cache: 'no-store'
+      });
+      
+      console.log('Transactions response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch transactions');
+        throw new Error(`Failed to fetch transactions: ${response.status} ${response.statusText}`);
       }
+      
       const data = await response.json();
-      setTransactions(data);
-      setFilteredTransactions(data);
-      calculateSummary(data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load transactions');
-    } finally {
+      console.log('Transactions data received:', data);
+      
+      // Ensure data is an array
+      const transactionsArray = Array.isArray(data) ? data : [];
+      setTransactions(transactionsArray);
+      setFilteredTransactions(transactionsArray);
+      
+      // Calculate summary with proper number conversion
+      const income = transactionsArray
+        .filter((t: Transaction) => t.type === 'income')
+        .reduce((sum: number, t: Transaction) => sum + (Number(t.amount) || 0), 0);
+      
+      const expenses = transactionsArray
+        .filter((t: Transaction) => t.type === 'expense')
+        .reduce((sum: number, t: Transaction) => sum + (Number(t.amount) || 0), 0);
+      
+      setSummary({
+        totalIncome: income,
+        totalExpenses: expenses,
+        balance: income - expenses,
+      });
+      
       setLoading(false);
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load transactions');
+      setLoading(false);
+      // Set empty arrays to prevent UI issues
+      setTransactions([]);
+      setFilteredTransactions([]);
+      // Reset summary to prevent NaN issues
+      setSummary({
+        totalIncome: 0,
+        totalExpenses: 0,
+        balance: 0
+      });
     }
   };
 
   const calculateSummary = (data: Transaction[]) => {
+    if (!Array.isArray(data)) {
+      setSummary({
+        totalIncome: 0,
+        totalExpenses: 0,
+        balance: 0
+      });
+      return;
+    }
+
     const summary = data.reduce(
       (acc, transaction) => {
-        const amount = Number(transaction.amount);
+        const amount = Number(transaction.amount) || 0;
         if (transaction.type === 'income') {
           acc.totalIncome += amount;
         } else {
@@ -122,9 +189,9 @@ export default function TransactionsPage() {
     );
 
     setSummary({
-      totalIncome: Number(summary.totalIncome),
-      totalExpenses: Number(summary.totalExpenses),
-      balance: Number(summary.totalIncome - summary.totalExpenses),
+      totalIncome: summary.totalIncome,
+      totalExpenses: summary.totalExpenses,
+      balance: summary.totalIncome - summary.totalExpenses,
     });
   };
 
@@ -192,6 +259,10 @@ export default function TransactionsPage() {
     try {
       const response = await fetch(`/api/transactions/${id}`, {
         method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-electron-app': 'true'
+        }
       });
 
       if (!response.ok) {
@@ -212,84 +283,112 @@ export default function TransactionsPage() {
   };
 
   if (loading) {
-    return <div className="flex justify-center items-center h-64">Loading...</div>;
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading transactions...</p>
+        </div>
+      </div>
+    );
   }
 
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg">
-        {error}
+        <div className="flex items-center mb-2">
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+          </svg>
+          <span className="font-medium">Error loading transactions</span>
+        </div>
+        <p>{error}</p>
+        <button 
+          onClick={fetchTransactions}
+          className="mt-3 bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-4 rounded-md transition-colors text-sm"
+        >
+          Retry
+        </button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Transactions</h1>
         <Link
           href="/dashboard/transactions/new"
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          className="flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
         >
-          <PlusIcon className="w-5 h-5 mr-2" />
+          <PlusIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-1.5 sm:mr-2" />
           Add Transaction
         </Link>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-sm font-medium text-gray-500">Total Income</h3>
-          <p className="text-2xl font-bold text-green-600">
-            ${summary.totalIncome.toFixed(2)}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-500">Total Income</h3>
+          <p className="text-lg sm:text-2xl font-bold text-green-600">
+            ${typeof summary.totalIncome === 'number' ? summary.totalIncome.toFixed(2) : '0.00'}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-sm font-medium text-gray-500">Total Expenses</h3>
-          <p className="text-2xl font-bold text-red-600">
-            ${summary.totalExpenses.toFixed(2)}
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-500">Total Expenses</h3>
+          <p className="text-lg sm:text-2xl font-bold text-red-600">
+            ${typeof summary.totalExpenses === 'number' ? summary.totalExpenses.toFixed(2) : '0.00'}
           </p>
         </div>
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-sm font-medium text-gray-500">Balance</h3>
-          <p className={`text-2xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            ${Math.abs(summary.balance).toFixed(2)}
+        <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+          <h3 className="text-xs sm:text-sm font-medium text-gray-500">Balance</h3>
+          <p className={`text-lg sm:text-2xl font-bold ${summary.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+            ${typeof summary.balance === 'number' ? Math.abs(summary.balance).toFixed(2) : '0.00'}
           </p>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex items-center space-x-2">
+      <div className="bg-white rounded-lg shadow-sm p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
             <button
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              className="flex items-center px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm"
               aria-label={showFilters ? "Hide filters" : "Show filters"}
               title={showFilters ? "Hide filters" : "Show filters"}
             >
-              <FunnelIcon className="w-5 h-5 mr-2" />
+              <FunnelIcon className="w-4 h-4 mr-1.5" />
               Filters
             </button>
-            <div className="relative">
+            <div className="relative w-full sm:w-auto">
               <input
                 type="text"
                 placeholder="Search transactions..."
                 value={filters.search}
                 onChange={(e) => setFilters(prev => ({ ...prev, search: e.target.value }))}
-                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder:text-gray-500"
+                className="w-full sm:w-64 pl-9 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 placeholder:text-gray-500 text-sm"
                 aria-label="Search transactions"
               />
-              <MagnifyingGlassIcon className="w-5 h-5 text-gray-400 absolute left-3 top-2.5" aria-hidden="true" />
+              <MagnifyingGlassIcon className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" aria-hidden="true" />
             </div>
           </div>
+          <button
+            onClick={fetchTransactions}
+            className="flex items-center justify-center px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Refresh
+          </button>
         </div>
 
         {showFilters && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
             <div>
-              <label htmlFor="startDate" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="startDate" className="block text-xs font-medium text-gray-700 mb-1">
                 Start Date
               </label>
               <input
@@ -297,11 +396,11 @@ export default function TransactionsPage() {
                 type="date"
                 value={filters.startDate}
                 onChange={(e) => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 text-sm"
               />
             </div>
             <div>
-              <label htmlFor="endDate" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="endDate" className="block text-xs font-medium text-gray-700 mb-1">
                 End Date
               </label>
               <input
@@ -309,18 +408,18 @@ export default function TransactionsPage() {
                 type="date"
                 value={filters.endDate}
                 onChange={(e) => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 text-sm"
               />
             </div>
             <div>
-              <label htmlFor="typeFilter" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="typeFilter" className="block text-xs font-medium text-gray-700 mb-1">
                 Type
               </label>
               <select
                 id="typeFilter"
                 value={filters.type}
                 onChange={(e) => setFilters(prev => ({ ...prev, type: e.target.value as 'all' | 'income' | 'expense' }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 text-sm"
               >
                 <option value="all">All</option>
                 <option value="income">Income</option>
@@ -328,14 +427,14 @@ export default function TransactionsPage() {
               </select>
             </div>
             <div>
-              <label htmlFor="categoryFilter" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="categoryFilter" className="block text-xs font-medium text-gray-700 mb-1">
                 Category
               </label>
               <select
                 id="categoryFilter"
                 value={filters.categoryId}
                 onChange={(e) => setFilters(prev => ({ ...prev, categoryId: e.target.value }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-gray-900 text-sm"
               >
                 <option value="">All Categories</option>
                 {categories.map(category => (
@@ -355,7 +454,7 @@ export default function TransactionsPage() {
           <table className="w-full">
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-6 py-3 text-left">
+                <th className="px-4 sm:px-6 py-3 text-left">
                   <button
                     onClick={() => handleSort('date')}
                     className="flex items-center text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -367,13 +466,13 @@ export default function TransactionsPage() {
                     )}
                   </button>
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Description
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Category
                 </th>
-                <th className="px-6 py-3 text-left">
+                <th className="px-4 sm:px-6 py-3 text-left">
                   <button
                     onClick={() => handleSort('amount')}
                     className="flex items-center text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -385,7 +484,7 @@ export default function TransactionsPage() {
                     )}
                   </button>
                 </th>
-                <th className="px-6 py-3 text-left">
+                <th className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left">
                   <button
                     onClick={() => handleSort('type')}
                     className="flex items-center text-xs font-medium text-gray-500 uppercase tracking-wider"
@@ -397,7 +496,7 @@ export default function TransactionsPage() {
                     )}
                   </button>
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
@@ -405,21 +504,37 @@ export default function TransactionsPage() {
             <tbody className="divide-y divide-gray-200">
               {filteredTransactions.map((transaction) => (
                 <tr key={transaction.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                     {format(new Date(transaction.date), 'MMM d, yyyy')}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {transaction.description}
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">
+                    <div className="sm:hidden inline-block mr-2">
+                      <span
+                        className={`inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium capitalize ${
+                          transaction.type === 'income'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {transaction.type}
+                      </span>
+                    </div>
+                    <div className="line-clamp-2 sm:line-clamp-1">
+                      {transaction.description}
+                    </div>
+                    <div className="sm:hidden text-xs text-gray-500 mt-1">
+                      {transaction.category_name}
+                    </div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  <td className="hidden sm:table-cell px-4 sm:px-6 py-3 sm:py-4 text-xs sm:text-sm text-gray-900">
                     {transaction.category_name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
                     <span className={transaction.type === 'income' ? 'text-green-600' : 'text-red-600'}>
                       ${Math.abs(transaction.amount).toFixed(2)}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="hidden sm:table-cell px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm">
                     <span
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize ${
                         transaction.type === 'income'
@@ -430,20 +545,21 @@ export default function TransactionsPage() {
                       {transaction.type}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <td className="px-4 sm:px-6 py-3 sm:py-4 whitespace-nowrap text-right text-xs sm:text-sm font-medium">
                     <div className="flex items-center justify-end space-x-2">
                       <Link
                         href={`/dashboard/transactions/${transaction.id}/edit`}
                         className="text-primary-600 hover:text-primary-900"
+                        aria-label={`Edit transaction: ${transaction.description}`}
                       >
-                        <PencilIcon className="w-5 h-5" />
+                        <PencilIcon className="w-4 h-4 sm:w-5 sm:h-5" />
                       </Link>
                       <button
                         onClick={() => handleDelete(transaction.id)}
                         className="text-red-600 hover:text-red-900"
                         aria-label={`Delete transaction: ${transaction.description}`}
                       >
-                        <TrashIcon className="w-5 h-5" aria-hidden="true" />
+                        <TrashIcon className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
                       </button>
                     </div>
                   </td>
@@ -451,7 +567,7 @@ export default function TransactionsPage() {
               ))}
               {filteredTransactions.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
+                  <td colSpan={6} className="px-4 sm:px-6 py-4 text-center text-xs sm:text-sm text-gray-500">
                     No transactions found
                   </td>
                 </tr>

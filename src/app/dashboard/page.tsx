@@ -103,8 +103,37 @@ export default function DashboardPage() {
     return `${value.toFixed(1)}%`;
   };
 
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return <div className="p-4 text-red-500">{error}</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard data...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[60vh]">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6 max-w-md">
+          <div className="flex items-center mb-4">
+            <ExclamationCircleIcon className="h-8 w-8 text-red-500 mr-3" />
+            <h3 className="text-lg font-semibold text-red-700">Error Loading Dashboard</h3>
+          </div>
+          <p className="text-red-600 mb-4">{error}</p>
+          <button 
+            onClick={fetchDashboardMetrics}
+            className="bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-4 rounded-md transition-colors"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   if (!metrics) return null;
 
   // Prepare data for the Revenue vs Expenses chart
@@ -167,26 +196,37 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="p-6 space-y-8">
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+        <h1 className="text-2xl font-bold text-gray-900 mb-2 sm:mb-0">Dashboard</h1>
+        <button 
+          onClick={fetchDashboardMetrics} 
+          className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors text-sm"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+          Refresh
+        </button>
+      </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {stats.map((stat) => (
           <Link
             key={stat.name}
             href={stat.href}
-            className="relative group rounded-lg border border-gray-200 bg-white p-6 hover:border-blue-500 hover:shadow-sm transition-all"
+            className="relative group rounded-lg border border-gray-200 bg-white p-4 hover:border-blue-500 hover:shadow-sm transition-all"
           >
             <div className="flex items-center">
               <div className="flex-shrink-0">
-                <stat.icon className="h-8 w-8 text-gray-400 group-hover:text-blue-500" />
+                <stat.icon className="h-6 w-6 text-gray-400 group-hover:text-blue-500" />
               </div>
-              <div className="ml-4 flex-1">
-                <h3 className="text-base font-medium text-gray-900">{stat.name}</h3>
-                <div className="flex items-baseline">
-                  <p className="text-2xl font-semibold text-gray-900">{stat.value}</p>
+              <div className="ml-3 flex-1">
+                <h3 className="text-sm font-medium text-gray-900">{stat.name}</h3>
+                <div className="flex flex-col sm:flex-row sm:items-baseline">
+                  <p className="text-lg font-semibold text-gray-900">{stat.value}</p>
                   <p
-                    className={`ml-2 text-sm ${
+                    className={`text-xs sm:ml-2 ${
                       stat.changeType === 'positive'
                         ? 'text-green-600'
                         : stat.changeType === 'negative'
@@ -205,11 +245,11 @@ export default function DashboardPage() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Revenue vs Expenses Chart */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Revenue vs Expenses (Last 6 Months)</h3>
-          <div className="h-80">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+          <h3 className="text-base sm:text-lg font-semibold mb-4">Revenue vs Expenses</h3>
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={revenueExpensesData}>
                 <CartesianGrid strokeDasharray="3 3" />
@@ -225,18 +265,18 @@ export default function DashboardPage() {
         </div>
 
         {/* Top Customers Chart */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Top 5 Customers by Revenue</h3>
-          <div className="h-80">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+          <h3 className="text-base sm:text-lg font-semibold mb-4">Top 5 Customers</h3>
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={metrics.charts.topCustomers}
                 layout="vertical"
-                margin={{ left: 100 }}
+                margin={{ left: 80 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" />
-                <YAxis type="category" dataKey="name" />
+                <YAxis type="category" dataKey="name" width={80} />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Bar dataKey="revenue" fill="#00C49F" />
               </BarChart>
@@ -245,9 +285,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Receivables Aging Chart */}
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h3 className="text-lg font-semibold mb-4">Receivables Aging</h3>
-          <div className="h-80">
+        <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+          <h3 className="text-base sm:text-lg font-semibold mb-4">Receivables Aging</h3>
+          <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
@@ -256,8 +296,8 @@ export default function DashboardPage() {
                   nameKey="period"
                   cx="50%"
                   cy="50%"
-                  outerRadius={100}
-                  label={(entry) => `${entry.period}: ${formatCurrency(entry.amount)}`}
+                  outerRadius={80}
+                  label={(entry) => `${entry.period}`}
                 >
                   {metrics.charts.receivablesAging.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />

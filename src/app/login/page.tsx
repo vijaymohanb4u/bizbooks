@@ -1,17 +1,50 @@
 'use client';
 
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { useState, FormEvent, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useState, FormEvent, Suspense, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
+import { isElectron } from '@/lib/environment';
+import { api } from '@/lib/api';
 
 function LoginForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const searchError = searchParams.get('error');
   const registered = searchParams.get('registered');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
+  const [isElectronApp, setIsElectronApp] = useState(false);
+  
+  // Check environment on mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const electronEnv = isElectron();
+      setIsElectronApp(electronEnv);
+      
+      // Force Electron mode for debugging if needed
+      const forceElectronMode = true; // Set to false in production
+      if (forceElectronMode && !electronEnv) {
+        setIsElectronApp(true);
+      }
+      
+      // Check if already authenticated in Electron
+      if (electronEnv || forceElectronMode) {
+        try {
+          const isAuth = await api.isAuthenticated();
+          
+          if (isAuth) {
+            router.push(callbackUrl);
+          }
+        } catch (error) {
+          // Silent error handling
+        }
+      }
+    };
+    
+    checkAuth();
+  }, [callbackUrl, router]);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -23,15 +56,39 @@ function LoginForm() {
     const password = formData.get('password') as string;
 
     try {
-      const result = await signIn('credentials', {
-        email,
-        password,
-        callbackUrl,
-        redirect: true,
-      });
+      // Use different authentication methods based on environment
+      if (isElectronApp) {
+        // Use direct API authentication for Electron
+        const result = await api.login({ email, password });
+        
+        if (result.success) {
+          // Force a delay to ensure token is stored before redirect
+          setTimeout(() => {
+            router.push(callbackUrl);
+          }, 1000);
+        } else {
+          setError(result.error || 'Authentication failed');
+        }
+      } else {
+        // Use NextAuth for web browser
+        const result = await signIn('credentials', {
+          email,
+          password,
+          callbackUrl,
+          redirect: false, // Don't redirect automatically
+        });
+        
+        if (result?.error) {
+          setError(result.error === 'CredentialsSignin' 
+            ? 'Invalid email or password' 
+            : 'An error occurred during sign in');
+        } else if (result?.url) {
+          router.push(result.url);
+        }
+      }
     } catch (err) {
       setError('An unexpected error occurred');
-      console.error('Sign in error:', err);
+    } finally {
       setLoading(false);
     }
   }
@@ -58,6 +115,9 @@ function LoginForm() {
             <div className="text-center mb-8">
               <h1 className="text-2xl font-bold text-gray-900 mb-2">Welcome back</h1>
               <p className="text-gray-600">Sign in to your account to continue</p>
+              {isElectronApp && (
+                <p className="text-blue-600 mt-2">Running in Electron mode</p>
+              )}
             </div>
 
             {registered && (

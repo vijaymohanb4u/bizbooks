@@ -21,15 +21,22 @@ export async function GET() {
     const [categories] = await pool.query<Category[]>(
       'SELECT * FROM categories ORDER BY name ASC'
     );
-
+    
     return NextResponse.json({
       data: categories,
       total: categories.length
     });
   } catch (error) {
-    console.error('Error fetching categories:', error);
+    // Check if it's a database connection error
+    if (error instanceof Error && error.message.includes('connect')) {
+      return NextResponse.json(
+        { error: 'Database connection failed', details: error.message },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch categories' },
+      { error: 'Failed to fetch categories', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -68,7 +75,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(categories[0], { status: 201 });
   } catch (error) {
-    console.error('Error creating category:', error);
     return NextResponse.json(
       { error: 'Failed to create category' },
       { status: 500 }

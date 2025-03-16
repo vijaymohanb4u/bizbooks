@@ -19,8 +19,6 @@ export async function GET(request: Request) {
     const endOfCurrentMonth = format(endOfMonth(currentDate), 'yyyy-MM-dd');
     const startOfSixMonthsAgo = format(startOfMonth(subMonths(currentDate, 5)), 'yyyy-MM-dd');
 
-    console.log('Date range:', { startOfCurrentMonth, endOfCurrentMonth });
-
     // Total Revenue (from invoices)
     const revenueResult = await executeQuery<MetricResult[]>(
       `SELECT COALESCE(SUM(total), 0) as value
@@ -38,7 +36,6 @@ export async function GET(request: Request) {
       [startOfCurrentMonth, endOfCurrentMonth]
     );
     const monthlyRevenue = Number(monthlyRevenueResult[0]?.value || 0);
-    console.log('Monthly revenue query result:', monthlyRevenueResult[0]);
 
     // Total Expenses (from bills)
     const expensesResult = await executeQuery<MetricResult[]>(
@@ -218,7 +215,6 @@ export async function GET(request: Request) {
       }
     });
   } catch (error) {
-    console.error('Error fetching dashboard metrics:', error);
     return NextResponse.json(
       { error: 'Failed to fetch dashboard metrics' },
       { status: 500 }

@@ -27,14 +27,29 @@ export default function ExpenseTransactionsPage() {
 
   const fetchTransactions = async () => {
     try {
-      const response = await fetch('/api/transactions');
+      console.log('Fetching expense transactions...');
+      const response = await fetch('/api/transactions', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-electron-app': 'true'
+        },
+        cache: 'no-store'
+      });
+      
+      console.log('Expense transactions response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch transactions');
+        throw new Error(`Failed to fetch transactions: ${response.status} ${response.statusText}`);
       }
+      
       const data = await response.json();
+      console.log('Expense transactions data received:', data);
+      
       // Filter only expense transactions
       setTransactions(data.filter((t: Transaction) => t.type === 'expense'));
     } catch (err) {
+      console.error('Error fetching expense transactions:', err);
       setError(err instanceof Error ? err.message : 'Failed to load transactions');
     } finally {
       setLoading(false);

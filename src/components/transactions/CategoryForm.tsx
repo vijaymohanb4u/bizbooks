@@ -33,11 +33,25 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
 
   const fetchCategory = async () => {
     try {
-      const response = await fetch(`/api/transactions/categories/${categoryId}`);
+      console.log(`CategoryForm: Fetching category ${categoryId}...`);
+      const response = await fetch(`/api/transactions/categories/${categoryId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-electron-app': 'true'
+        },
+        cache: 'no-store'
+      });
+      
+      console.log('CategoryForm: Category response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch category');
+        throw new Error(`Failed to fetch category: ${response.status} ${response.statusText}`);
       }
+      
       const data = await response.json();
+      console.log('CategoryForm: Category data received:', data);
+      
       setFormData({
         name: data.name,
         type: data.type,
@@ -45,6 +59,7 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
         color: data.color || '#000000'
       });
     } catch (err) {
+      console.error('CategoryForm: Error fetching category:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch category');
     }
   };
@@ -59,23 +74,28 @@ export default function CategoryForm({ categoryId }: CategoryFormProps) {
         ? `/api/transactions/categories/${categoryId}`
         : '/api/transactions/categories';
       
+      console.log(`CategoryForm: ${categoryId ? 'Updating' : 'Creating'} category...`);
       const response = await fetch(url, {
         method: categoryId ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'x-electron-app': 'true'
         },
         body: JSON.stringify(formData),
       });
-
+      
+      console.log('CategoryForm: Submit response status:', response.status);
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to save category');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to save category');
       }
-
-      router.push('/dashboard/transactions/categories');
+      
+      // Redirect to categories list
+      window.location.href = '/dashboard/transactions/categories';
     } catch (err) {
+      console.error('CategoryForm: Error saving category:', err);
       setError(err instanceof Error ? err.message : 'Failed to save category');
-    } finally {
       setLoading(false);
     }
   };

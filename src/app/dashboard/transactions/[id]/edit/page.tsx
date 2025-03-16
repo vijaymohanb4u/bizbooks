@@ -48,11 +48,25 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
 
   const fetchTransaction = async () => {
     try {
-      const response = await fetch(`/api/transactions/${resolvedParams.id}`);
+      console.log(`EditTransaction: Fetching transaction ${resolvedParams.id}...`);
+      const response = await fetch(`/api/transactions/${resolvedParams.id}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-electron-app': 'true'
+        },
+        cache: 'no-store'
+      });
+      
+      console.log('EditTransaction: Transaction response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch transaction');
+        throw new Error(`Failed to fetch transaction: ${response.status} ${response.statusText}`);
       }
+      
       const data = await response.json();
+      console.log('EditTransaction: Transaction data received:', data);
+      
       setTransaction(data);
       setFormData({
         date: data.date.split('T')[0],
@@ -64,6 +78,7 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
         reference_number: data.reference_number || '',
       });
     } catch (err) {
+      console.error('EditTransaction: Error fetching transaction:', err);
       setError(err instanceof Error ? err.message : 'Failed to load transaction');
     } finally {
       setLoading(false);
@@ -72,14 +87,27 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/transactions/categories');
+      console.log('EditTransaction: Fetching categories...');
+      const response = await fetch('/api/transactions/categories', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-electron-app': 'true'
+        },
+        cache: 'no-store'
+      });
+      
+      console.log('EditTransaction: Categories response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error('Failed to fetch categories');
+        throw new Error(`Failed to fetch categories: ${response.status} ${response.statusText}`);
       }
+      
       const { data } = await response.json();
-      setCategories(data);
+      console.log('EditTransaction: Fetched categories:', data);
+      setCategories(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error('Error fetching categories:', err);
+      console.error('EditTransaction: Error fetching categories:', err);
     }
   };
 
@@ -88,10 +116,12 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
     setError('');
 
     try {
+      console.log(`EditTransaction: Updating transaction ${resolvedParams.id}...`);
       const response = await fetch(`/api/transactions/${resolvedParams.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
+          'x-electron-app': 'true'
         },
         body: JSON.stringify({
           ...formData,
@@ -100,6 +130,8 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
         }),
       });
 
+      console.log('EditTransaction: Update response status:', response.status);
+      
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'Failed to update transaction');
@@ -108,6 +140,7 @@ export default function EditTransactionPage({ params }: { params: Promise<{ id: 
       router.push('/dashboard/transactions');
       router.refresh();
     } catch (err) {
+      console.error('EditTransaction: Error updating transaction:', err);
       setError(err instanceof Error ? err.message : 'Failed to update transaction');
     }
   };

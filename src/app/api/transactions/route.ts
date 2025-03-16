@@ -25,12 +25,19 @@ export async function GET() {
       LEFT JOIN categories c ON t.category_id = c.id
       ORDER BY t.date DESC, t.created_at DESC
     `);
-
+    
     return NextResponse.json(rows);
   } catch (error) {
-    console.error('Error fetching transactions:', error);
+    // Check if it's a database connection error
+    if (error instanceof Error && error.message.includes('connect')) {
+      return NextResponse.json(
+        { error: 'Database connection failed', details: error.message },
+        { status: 503 }
+      );
+    }
+    
     return NextResponse.json(
-      { error: 'Failed to fetch transactions' },
+      { error: 'Failed to fetch transactions', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }
     );
   }
@@ -116,7 +123,6 @@ export async function POST(request: Request) {
 
     return NextResponse.json(transactions[0], { status: 201 });
   } catch (error) {
-    console.error('Error creating transaction:', error);
     return NextResponse.json(
       { error: 'Failed to create transaction' },
       { status: 500 }
