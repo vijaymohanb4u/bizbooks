@@ -93,6 +93,17 @@ export default function DashboardPage() {
   };
 
   const formatCurrency = (amount: number) => {
+    // For large numbers, use compact notation
+    if (Math.abs(amount) >= 10000) {
+      return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        notation: 'compact',
+        maximumFractionDigits: 1
+      }).format(amount);
+    }
+    
+    // For smaller numbers, use standard format
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'USD'
@@ -215,29 +226,27 @@ export default function DashboardPage() {
           <Link
             key={stat.name}
             href={stat.href}
-            className="relative group rounded-lg border border-gray-200 bg-white p-4 hover:border-blue-500 hover:shadow-sm transition-all"
+            className="relative group rounded-lg border border-gray-200 bg-white p-4 hover:border-blue-500 hover:shadow-sm transition-all h-full"
           >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <stat.icon className="h-6 w-6 text-gray-400 group-hover:text-blue-500" />
+            <div className="flex items-start">
+              <div className="flex-shrink-0 mt-1">
+                <stat.icon className="h-5 w-5 text-gray-400 group-hover:text-blue-500" />
               </div>
-              <div className="ml-3 flex-1">
-                <h3 className="text-sm font-medium text-gray-900">{stat.name}</h3>
-                <div className="flex flex-col sm:flex-row sm:items-baseline">
-                  <p className="text-lg font-semibold text-gray-900">{stat.value}</p>
-                  <p
-                    className={`text-xs sm:ml-2 ${
-                      stat.changeType === 'positive'
-                        ? 'text-green-600'
-                        : stat.changeType === 'negative'
-                        ? 'text-red-600'
-                        : 'text-gray-500'
-                    }`}
-                  >
-                    {stat.changeLabel ? `${stat.changeLabel}: ` : ''}
-                    {stat.change}
-                  </p>
-                </div>
+              <div className="ml-3 flex-1 min-w-0 overflow-hidden">
+                <h3 className="text-sm font-medium text-gray-900 truncate">{stat.name}</h3>
+                <p className="text-lg font-semibold text-gray-900 truncate">{stat.value}</p>
+                <p
+                  className={`text-xs truncate mt-1 ${
+                    stat.changeType === 'positive'
+                      ? 'text-green-600'
+                      : stat.changeType === 'negative'
+                      ? 'text-red-600'
+                      : 'text-gray-500'
+                  }`}
+                >
+                  {stat.changeLabel ? `${stat.changeLabel}: ` : ''}
+                  {stat.change}
+                </p>
               </div>
             </div>
           </Link>
@@ -251,12 +260,12 @@ export default function DashboardPage() {
           <h3 className="text-base sm:text-lg font-semibold mb-4">Revenue vs Expenses</h3>
           <div className="h-64 sm:h-80">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueExpensesData}>
+              <BarChart data={revenueExpensesData} margin={{ left: 0, right: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
+                <XAxis dataKey="month" tick={{ fontSize: 12 }} tickFormatter={(value) => value.split(' ')[0]} />
+                <YAxis tick={{ fontSize: 12 }} tickFormatter={(value) => `$${value/1000}k`} />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Legend />
+                <Legend wrapperStyle={{ fontSize: 12 }} />
                 <Bar dataKey="Revenue" fill="#0088FE" />
                 <Bar dataKey="Expenses" fill="#FF8042" />
               </BarChart>
@@ -272,11 +281,17 @@ export default function DashboardPage() {
               <BarChart
                 data={metrics.charts.topCustomers}
                 layout="vertical"
-                margin={{ left: 80 }}
+                margin={{ left: 100, right: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis type="category" dataKey="name" width={80} />
+                <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(value) => `$${value/1000}k`} />
+                <YAxis 
+                  type="category" 
+                  dataKey="name" 
+                  width={100} 
+                  tick={{ fontSize: 12 }}
+                  tickFormatter={(value) => value.length > 15 ? `${value.substring(0, 12)}...` : value}
+                />
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
                 <Bar dataKey="revenue" fill="#00C49F" />
               </BarChart>
@@ -297,14 +312,15 @@ export default function DashboardPage() {
                   cx="50%"
                   cy="50%"
                   outerRadius={80}
-                  label={(entry) => `${entry.period}`}
+                  label={({ period, percent }) => `${period} (${(percent * 100).toFixed(0)}%)`}
+                  labelLine={false}
                 >
                   {metrics.charts.receivablesAging.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                <Legend />
+                <Legend wrapperStyle={{ fontSize: 12, paddingTop: 20 }} />
               </PieChart>
             </ResponsiveContainer>
           </div>

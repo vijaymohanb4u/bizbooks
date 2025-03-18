@@ -35,6 +35,14 @@ const publicApiPaths = [
   '/api/transactions/',
   '/api/transactions/categories',
   '/api/transactions/categories/',
+  // Add settings API routes
+  '/api/settings/company',
+  '/api/settings/company/',
+  '/api/settings/hours',
+  '/api/settings/hours/',
+  // Add migrations API route
+  '/api/migrations',
+  '/api/migrations/',
 ];
 
 export async function middleware(request: NextRequest) {
