@@ -1,6 +1,6 @@
 -- Drop and recreate the bizbooks database
-DROP DATABASE IF EXISTS bizbooks;
-CREATE DATABASE bizbooks;
+-- DROP DATABASE IF EXISTS bizbooks;
+-- CREATE DATABASE bizbooks;
 USE bizbooks;
 
 -- Users table
@@ -12,6 +12,59 @@ CREATE TABLE IF NOT EXISTS users (
   company VARCHAR(100) NOT NULL,
   password VARCHAR(255) NOT NULL,
   role ENUM('admin', 'user') DEFAULT 'user',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Company profile table
+CREATE TABLE IF NOT EXISTS company_profile (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  legal_name VARCHAR(255),
+  tax_id VARCHAR(100),
+  email VARCHAR(255),
+  phone VARCHAR(50),
+  website VARCHAR(255),
+  address_line1 VARCHAR(255),
+  address_line2 VARCHAR(255),
+  city VARCHAR(100),
+  state VARCHAR(100),
+  postal_code VARCHAR(20),
+  country VARCHAR(100),
+  logo_url VARCHAR(255),
+  currency VARCHAR(10) DEFAULT 'USD',
+  fiscal_year_start VARCHAR(5) DEFAULT '01-01',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- Business hours table
+CREATE TABLE IF NOT EXISTS business_hours (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  monday_open VARCHAR(5) NOT NULL DEFAULT '09:00',
+  monday_close VARCHAR(5) NOT NULL DEFAULT '17:00',
+  monday_closed BOOLEAN NOT NULL DEFAULT 0,
+  tuesday_open VARCHAR(5) NOT NULL DEFAULT '09:00',
+  tuesday_close VARCHAR(5) NOT NULL DEFAULT '17:00',
+  tuesday_closed BOOLEAN NOT NULL DEFAULT 0,
+  wednesday_open VARCHAR(5) NOT NULL DEFAULT '09:00',
+  wednesday_close VARCHAR(5) NOT NULL DEFAULT '17:00',
+  wednesday_closed BOOLEAN NOT NULL DEFAULT 0,
+  thursday_open VARCHAR(5) NOT NULL DEFAULT '09:00',
+  thursday_close VARCHAR(5) NOT NULL DEFAULT '17:00',
+  thursday_closed BOOLEAN NOT NULL DEFAULT 0,
+  friday_open VARCHAR(5) NOT NULL DEFAULT '09:00',
+  friday_close VARCHAR(5) NOT NULL DEFAULT '17:00',
+  friday_closed BOOLEAN NOT NULL DEFAULT 0,
+  saturday_open VARCHAR(5) NOT NULL DEFAULT '09:00',
+  saturday_close VARCHAR(5) NOT NULL DEFAULT '17:00',
+  saturday_closed BOOLEAN NOT NULL DEFAULT 1,
+  sunday_open VARCHAR(5) NOT NULL DEFAULT '09:00',
+  sunday_close VARCHAR(5) NOT NULL DEFAULT '17:00',
+  sunday_closed BOOLEAN NOT NULL DEFAULT 1,
+  timezone VARCHAR(50) NOT NULL DEFAULT 'UTC',
+  special_hours_enabled BOOLEAN NOT NULL DEFAULT 0,
+  notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

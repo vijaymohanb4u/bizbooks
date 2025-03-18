@@ -3,13 +3,11 @@
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useState, FormEvent } from 'react';
-import { useAuth } from '@/hooks/useAuth';
 
 export default function Signup() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>('');
-  const { status } = useAuth(false);
 
   async function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -55,15 +53,6 @@ export default function Signup() {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (status === 'loading') {
-    return <div>Loading...</div>;
-  }
-
-  if (status === 'authenticated') {
-    router.push('/dashboard');
-    return null;
   }
 
   return (
