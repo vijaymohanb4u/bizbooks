@@ -26,6 +26,22 @@ pool.getConnection()
     // Silent error handling
   });
 
+// Query interface
+interface QueryParams {
+  query: string;
+  values?: any[];
+}
+
+// Query function that returns the results
+export async function query({ query, values = [] }: QueryParams) {
+  try {
+    const [results] = await pool.execute(query, values);
+    return results;
+  } catch (error) {
+    throw error;
+  }
+}
+
 // Wrapper function to execute queries with automatic connection handling
 export async function executeQuery<T>(query: string, params: any[] = []): Promise<T> {
   try {
@@ -48,4 +64,4 @@ export async function ensureDbConnected() {
   } catch (error) {
     throw new Error('Database connection failed');
   }
-} 
+}
