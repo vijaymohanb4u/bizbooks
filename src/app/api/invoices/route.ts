@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const offset = (page - 1) * limit;
 
     let query = `
-      SELECT 
+      SELECT
         i.*,
         c.name as customer_name,
         c.email as customer_email
@@ -24,16 +24,24 @@ export async function GET(request: Request) {
       LEFT JOIN customers c ON i.customer_id = c.id
       WHERE 1=1
     `;
+    // Separate query for counting total rows with the same filters
+    let countQuery = `SELECT COUNT(*) as total FROM invoices i WHERE 1=1`;
+
     const params: any[] = [];
+    const countParams: any[] = [];
 
     if (status) {
       query += ' AND i.status = ?';
+      countQuery += ' AND i.status = ?';
       params.push(status);
+      countParams.push(status);
     }
 
     if (customer_id) {
       query += ' AND i.customer_id = ?';
+      countQuery += ' AND i.customer_id = ?';
       params.push(customer_id);
+      countParams.push(customer_id);
     }
 
     query += ' ORDER BY i.created_at DESC LIMIT ? OFFSET ?';
@@ -41,11 +49,8 @@ export async function GET(request: Request) {
 
     const [rows] = await pool.query<RowDataPacket[]>(query, params);
 
-    // Get total count for pagination
-    const [countResult] = await pool.query<RowDataPacket[]>(
-      'SELECT COUNT(*) as total FROM invoices',
-      []
-    );
+    // Get total count for pagination using the same filters
+    const [countResult] = await pool.query<RowDataPacket[]>(countQuery, countParams);
     const total = countResult[0].total;
 
     // Ensure numeric values are properly converted
